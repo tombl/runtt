@@ -1,5 +1,5 @@
-import { URL } from "url";
-import { workerData } from "worker_threads";
+import { readdir, readFile } from "fs/promises";
+import { pathToFileURL, URL } from "url";
 
 type Format = "builtin" | "commonjs" | "json" | "module" | "wasm";
 type Resolver = (
@@ -34,10 +34,19 @@ type Loader = (
 const replaceExtension = (path: string, ext: string) =>
   `${path.slice(0, path.lastIndexOf("."))}.${ext}`;
 
+const srcDir = pathToFileURL(process.env.RUNTT_SRC! + "/");
+const transpiledDir = pathToFileURL(process.env.RUNTT_TRANSPILED! + "/");
+const files = new Map(
+  (await readdir(transpiledDir)).map(
+    (name) =>
+      [new URL(name, srcDir).toString(), new URL(name, transpiledDir)] as const
+  )
+);
+
 export const resolve: Resolver = async (specifier, context, defaultResolve) => {
   if (specifier.startsWith("file:")) {
     const replaced = replaceExtension(specifier, "js");
-    if (replaced in files) {
+    if (files.has(replaced)) {
       return { url: replaced, format: "module" };
     }
   } else if (specifier[0] === ".") {
@@ -45,22 +54,17 @@ export const resolve: Resolver = async (specifier, context, defaultResolve) => {
       new URL(specifier, context.parentURL).toString(),
       "js"
     );
-    if (replaced in files) {
+    if (files.has(replaced)) {
       return { url: replaced, format: "module" };
     }
   }
   return defaultResolve(specifier, context, defaultResolve);
 };
 
-const { files, buf } = workerData as {
-  files: Record<string, [number, number]>;
-  buf: Uint8Array;
-};
 export const load: Loader = async (url, context, defaultLoad) => {
-  const path = replaceExtension(url, "js");
-  if (path in files) {
-    const [start, end] = files[path];
-    return { format: "module", source: buf.slice(start, end) };
+  const transpiled = files.get(replaceExtension(url, "js"));
+  if (transpiled !== undefined) {
+    return { format: "module", source: await readFile(transpiled) };
   }
   return defaultLoad(url, context, defaultLoad);
 };

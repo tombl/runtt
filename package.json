@@ -25,6 +25,7 @@
   "dependencies": {
     "arg": "^5.0.1",
     "esbuild": "^0.14.8",
+    "tempy": "^2.0.0",
     "yoctocolors": "^0.2.0"
   },
   "devDependencies": {

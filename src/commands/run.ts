@@ -1,11 +1,13 @@
 import arg from "arg";
-import { build, BuildResult } from "esbuild";
+import { ChildProcess, fork } from "child_process";
+import { build } from "esbuild";
+import { once } from "events";
 import * as path from "path";
-import { fileURLToPath, pathToFileURL, URL } from "url";
-import { Worker } from "worker_threads";
-import { commonOptions } from "../esbuild";
-import { UserError } from "../errors";
+import tempy from "tempy";
+import { fileURLToPath, URL } from "url";
 import { dim } from "yoctocolors";
+import { UserError } from "../errors";
+import { commonOptions } from "../esbuild";
 
 export default async function (argv: string[]) {
   const args = arg(
@@ -24,22 +26,14 @@ export default async function (argv: string[]) {
     throw new UserError("no file to run");
   }
   const file = path.resolve(options.file);
-  let worker: Worker | null = null;
-  function handleResult(result: BuildResult) {
-    const files: Record<string, [number, number]> = {};
-    const size = result
-      .outputFiles!.map((file) => file.contents.byteLength)
-      .reduce((acc, size) => acc + size);
-    let index = 0;
-    const buf = new Uint8Array(size);
-    for (const file of result.outputFiles!) {
-      buf.set(file.contents, index);
-      files[pathToFileURL(file.path).toString()] = [
-        index,
-        (index += file.contents.byteLength),
-      ];
-    }
-
+  const outdir = tempy.directory({ prefix: "runtt_" });
+  let subprocess: ChildProcess | null = null;
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+    process.on(signal, () => {
+      subprocess?.kill(signal);
+    });
+  }
+  async function run() {
     const loaderPath = (0, eval)(
       (() => {
         import("../loader");
@@ -50,49 +44,45 @@ export default async function (argv: string[]) {
     if (loaderPath === undefined) {
       throw new UserError("run is unsupported in the bootstrap environment");
     }
-    worker?.terminate();
-    worker = new Worker(file, {
-      workerData: { files, buf },
-      transferList: [buf.buffer],
+    if (subprocess !== null) {
+      subprocess.kill("SIGINT");
+      await once(subprocess, "exit");
+    }
+    subprocess = fork(file, options.argv, {
+      env: { RUNTT_SRC: path.dirname(file), RUNTT_TRANSPILED: outdir },
       execArgv: [
         "--enable-source-maps",
         "--experimental-loader",
         fileURLToPath(new URL(loaderPath, import.meta.url)),
         "--no-warnings",
       ],
-      argv: options.argv,
     });
-    worker.on("error", (error) => {
-      console.error(error);
-    });
-    worker.on("exit", (code) => {
+    subprocess.on("exit", (code) => {
       if (options.watch) {
         console.log(dim(`process exited with code ${code}`));
       } else {
-        process.exitCode = code;
+        process.exitCode = code ?? 0;
       }
     });
   }
 
   try {
-    const result = await build({
+    await build({
       ...commonOptions,
-      entryPoints: [path.resolve(options.file)],
-      outdir: path.dirname(file),
+      entryPoints: [file],
+      outdir,
       platform: "node",
-      allowOverwrite: true,
-      write: false,
       watch: options.watch
         ? {
             async onRebuild(error, result) {
               if (result !== null) {
                 console.log(dim(`restarting ${options.file}`));
-                handleResult(result);
+                await run();
               }
             },
           }
         : false,
     });
-    handleResult(result);
+    await run();
   } catch {}
 }
