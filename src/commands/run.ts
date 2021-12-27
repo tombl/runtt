@@ -28,11 +28,6 @@ export default async function (argv: string[]) {
   const file = path.resolve(options.file);
   const outdir = tempy.directory({ prefix: "runtt_" });
   let subprocess: ChildProcess | null = null;
-  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
-    process.on(signal, () => {
-      subprocess?.kill(signal);
-    });
-  }
   async function run() {
     const loaderPath = (0, eval)(
       (() => {
