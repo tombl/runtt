@@ -1,6 +1,6 @@
 {
   "name": "runtt",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "The smallest TypeScript runttime and builder of the litter",
   "keywords": ["typescript", "esbuild"],
   "homepage": "https://github.com/tombl/runtt",
@@ -10,9 +10,10 @@
   "bin": { "runtt": "dist/main.js" },
   "files": ["dist"],
   "scripts": {
-    "bootstrap": "esbuild src/main.ts --platform=node --outfile=bootstrap.js --bundle --format=esm --external:esbuild",
-    "build": "node --enable-source-maps bootstrap.js build src/main.ts",
-    "rebuild": "node --enable-source-maps dist/main.js build src/main.ts"
+    "clean": "rm -rf stage0.js stage1 dist",
+    "stage0": "esbuild src/main.ts --platform=node --outfile=stage0.js --bundle --format=esm --external:esbuild",
+    "stage1": "node --enable-source-maps stage0.js build -o stage1 src/main.ts",
+    "stage2": "node --enable-source-maps stage1/main.js build src/main.ts"
   },
   "dependencies": {
     "arg": "^5.0.2",
