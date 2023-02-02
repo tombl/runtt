@@ -1,10 +1,10 @@
 import arg from "arg";
+import { context } from "esbuild";
 import { ChildProcess, fork } from "node:child_process";
-import { build } from "esbuild";
 import { once } from "node:events";
 import * as path from "node:path";
-import tempy from "tempy";
 import { fileURLToPath, URL } from "node:url";
+import tempy from "tempy";
 import { dim } from "yoctocolors";
 import { UserError } from "../errors";
 import { commonOptions } from "../esbuild";
@@ -60,24 +60,25 @@ export default async function (argv: string[]) {
       }
     });
   }
-
-  try {
-    await build({
-      ...commonOptions,
-      entryPoints: [file],
-      outdir,
-      platform: "node",
-      watch: options.watch
-        ? {
-          async onRebuild(_error, result) {
-            if (result !== null) {
-              console.log(dim(`restarting ${options.file}`));
-              await run();
-            }
-          },
-        }
-        : false,
-    });
-    await run();
-  } catch {}
+  const ctx = await context({
+    ...commonOptions,
+    entryPoints: [file],
+    outdir,
+    platform: "node",
+    plugins: [...commonOptions.plugins ?? [], {
+      name: "runtt-run",
+      setup(build) {
+        build.onEnd(() => {
+          console.log(dim("building..."));
+          run();
+        });
+      },
+    }],
+  });
+  if (options.watch) {
+    await ctx.watch();
+  } else {
+    await ctx.rebuild();
+    await ctx.dispose();
+  }
 }

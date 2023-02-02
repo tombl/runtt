@@ -22,7 +22,7 @@ if (!command) {
 }
 
 try {
-  await (await command()).default(argv);
+  await (await command()).default(argv.slice(1));
 } catch (error) {
   if (error instanceof arg.ArgError || error instanceof UserError) {
     console.error(`${red("error")}: ${error.message}`);

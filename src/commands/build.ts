@@ -1,8 +1,8 @@
 import arg from "arg";
-import { build, type Platform } from "esbuild";
+import { context, type Platform } from "esbuild";
 import { dim } from "yoctocolors";
-import { commonOptions } from "../esbuild";
 import { UserError } from "../errors";
+import { commonOptions } from "../esbuild";
 
 export default async function (argv: string[]) {
   const args = arg(
@@ -30,21 +30,26 @@ export default async function (argv: string[]) {
     throw new UserError("no input files");
   }
   try {
-    await build({
+    const ctx = await context({
       ...commonOptions,
       entryPoints: options.files,
       minify: options.minify,
       outdir: options.out,
       platform: options.platform as Platform,
-      watch: options.watch
-        ? {
-          onRebuild(_error, result) {
-            if (result !== null) {
-              console.log(dim(`rebuilt ${options.files.join(", ")}`));
-            }
-          },
-        }
-        : false,
+      plugins: [...commonOptions.plugins ?? [], {
+        name: "runtt-build",
+        setup(build) {
+          build.onEnd(() => {
+            console.log(dim("building..."));
+          });
+        },
+      }],
     });
+    if (options.watch) {
+      await ctx.watch();
+    } else {
+      await ctx.rebuild();
+      await ctx.dispose();
+    }
   } catch {}
 }

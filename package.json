@@ -11,7 +11,8 @@
   "files": ["dist"],
   "scripts": {
     "bootstrap": "esbuild src/main.ts --platform=node --outfile=bootstrap.js --bundle --format=esm --external:esbuild",
-    "build": "node --enable-source-maps bootstrap.js build src/main.ts"
+    "build": "node --enable-source-maps bootstrap.js build src/main.ts",
+    "rebuild": "node --enable-source-maps dist/main.js build src/main.ts"
   },
   "dependencies": {
     "arg": "^5.0.2",
