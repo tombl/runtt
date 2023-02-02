@@ -1,5 +1,5 @@
 import arg from "arg";
-import { build, Platform } from "esbuild";
+import { build, type Platform } from "esbuild";
 import { dim } from "yoctocolors";
 import { commonOptions } from "../esbuild";
 import { UserError } from "../errors";
@@ -14,7 +14,7 @@ export default async function (argv: string[]) {
       "-o": "--out",
       "-w": "--watch",
     },
-    { argv }
+    { argv },
   );
   const options = {
     watch: args["--watch"] ?? false,
@@ -38,12 +38,12 @@ export default async function (argv: string[]) {
       platform: options.platform as Platform,
       watch: options.watch
         ? {
-            onRebuild(error, result) {
-              if (result !== null) {
-                console.log(dim(`rebuilt ${options.files.join(", ")}`));
-              }
-            },
-          }
+          onRebuild(_error, result) {
+            if (result !== null) {
+              console.log(dim(`rebuilt ${options.files.join(", ")}`));
+            }
+          },
+        }
         : false,
     });
   } catch {}

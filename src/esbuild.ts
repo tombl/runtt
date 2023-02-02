@@ -1,4 +1,5 @@
 import type { BuildOptions } from "esbuild";
+
 export const commonOptions: BuildOptions = {
   bundle: true,
   format: "esm",
@@ -10,7 +11,7 @@ export const commonOptions: BuildOptions = {
       setup(build) {
         build.onResolve(
           { filter: /^[^.\/]|^\.[^.\/]|^\.\.[^\/]/ },
-          ({ path }) => ({ path, external: true })
+          ({ path }) => ({ path, external: true }),
         );
       },
     },

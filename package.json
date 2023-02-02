@@ -2,35 +2,25 @@
   "name": "runtt",
   "version": "0.0.3",
   "description": "The smallest TypeScript runttime and builder of the litter",
-  "keywords": [
-    "typescript",
-    "esbuild"
-  ],
+  "keywords": ["typescript", "esbuild"],
   "homepage": "https://github.com/tombl/runtt",
-  "repository": {
-    "url": "https://github.com/tombl/runtt.git"
-  },
+  "repository": { "url": "https://github.com/tombl/runtt.git" },
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "runtt": "dist/main.js"
-  },
-  "files": [
-    "dist"
-  ],
+  "bin": { "runtt": "dist/main.js" },
+  "files": ["dist"],
   "scripts": {
     "bootstrap": "esbuild src/main.ts --platform=node --outfile=bootstrap.js --bundle --format=esm --external:esbuild",
     "build": "node --enable-source-maps bootstrap.js build src/main.ts"
   },
   "dependencies": {
-    "arg": "^5.0.1",
-    "esbuild": "^0.14.8",
+    "arg": "^5.0.2",
+    "esbuild": "^0.17.5",
     "tempy": "^2.0.0",
     "yoctocolors": "^0.2.0"
   },
   "devDependencies": {
-    "@types/node": "^17.0.4",
-    "prettier": "^2.5.1",
-    "typescript": "^4.5.4"
+    "@types/node": "^18.11.18",
+    "typescript": "^4.9.5"
   }
 }

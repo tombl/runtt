@@ -1,5 +1,5 @@
 import { bold, red } from "yoctocolors";
-import { version } from "../../package.json";
+import packageJson from "../../package.json" assert { type: "json" };
 
 const descriptions = {
   build: "compile a program into an optimized bundle",
@@ -7,7 +7,7 @@ const descriptions = {
 };
 
 const HELP: Record<string, string> = {
-  runtt: `${bold("runtt")} ${version}
+  runtt: `${bold("runtt")} ${packageJson.version}
 the smallest TypeScript runttime and builder of the litter
 
 ${bold("usage:")}

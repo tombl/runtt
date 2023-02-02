@@ -1,10 +1,10 @@
 import arg from "arg";
-import { ChildProcess, fork } from "child_process";
+import { ChildProcess, fork } from "node:child_process";
 import { build } from "esbuild";
-import { once } from "events";
-import * as path from "path";
+import { once } from "node:events";
+import * as path from "node:path";
 import tempy from "tempy";
-import { fileURLToPath, URL } from "url";
+import { fileURLToPath, URL } from "node:url";
 import { dim } from "yoctocolors";
 import { UserError } from "../errors";
 import { commonOptions } from "../esbuild";
@@ -15,7 +15,7 @@ export default async function (argv: string[]) {
       "--watch": Boolean,
       "-w": "--watch",
     },
-    { argv, stopAtPositional: true }
+    { argv, stopAtPositional: true },
   );
   const options = {
     watch: args["--watch"] ?? false,
@@ -34,7 +34,7 @@ export default async function (argv: string[]) {
         import("../loader");
       })
         .toString()
-        .replace("import", "return")
+        .replace("import", "return"),
     )();
     if (loaderPath === undefined) {
       throw new UserError("run is unsupported in the bootstrap environment");
@@ -69,13 +69,13 @@ export default async function (argv: string[]) {
       platform: "node",
       watch: options.watch
         ? {
-            async onRebuild(error, result) {
-              if (result !== null) {
-                console.log(dim(`restarting ${options.file}`));
-                await run();
-              }
-            },
-          }
+          async onRebuild(_error, result) {
+            if (result !== null) {
+              console.log(dim(`restarting ${options.file}`));
+              await run();
+            }
+          },
+        }
         : false,
     });
     await run();
